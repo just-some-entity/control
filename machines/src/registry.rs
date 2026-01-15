@@ -20,6 +20,8 @@ use crate::{
 
 use crate::test_machine::TestMachine;
 
+use crate::wago_750_530_example::WAGO_750_530_ExampleMachine;
+
 use lazy_static::lazy_static;
 
 use anyhow::Error;
@@ -127,6 +129,8 @@ lazy_static! {
         mc.register::<IP20TestMachine>(IP20TestMachine::MACHINE_IDENTIFICATION);
 
         mc.register::<AnalogInputTestMachine>(AnalogInputTestMachine::MACHINE_IDENTIFICATION);
+
+        mc.register::<WAGO_750_530_ExampleMachine>(WAGO_750_530_ExampleMachine::MACHINE_IDENTIFICATION);
 
         mc
     };

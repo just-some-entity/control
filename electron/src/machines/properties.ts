@@ -474,6 +474,41 @@ export const wagoPower1: MachineProperties = {
   device_roles: [],
 };
 
+export const wago_750_530: MachineProperties = {
+  name: "Wago 750-530",
+  version: "V1",
+  slug: "wago_750_530",
+  icon: "lu:Disc3",
+  machine_identification: {
+    vendor: VENDOR_QITECH,
+    machine: 0x00ff,
+  },
+  device_roles: [
+    {
+      role: 0,
+      role_label: "Bus Coupler",
+      allowed_devices: [
+        {
+          vendor_id: 2,
+          product_id: 0x44c2c52,
+          revision: 0x120000,
+        },
+      ],
+    },
+    {
+      role: 1,
+      role_label: "EL2004",
+      allowed_devices: [
+        {
+          vendor_id: 2,
+          product_id: 0x7d43052,
+          revision: 0x120000,
+        },
+      ],
+    },
+  ],
+};
+
 export const analogInputTestMachine: MachineProperties = {
   name: "AnalogTest",
   version: "V1",
@@ -545,6 +580,7 @@ export const machineProperties: MachineProperties[] = [
   testmachine,
   analogInputTestMachine,
   ip20TestMachine,
+  wago_750_530
 ];
 
 export const getMachineProperties = (

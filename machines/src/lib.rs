@@ -30,6 +30,7 @@ pub mod serial;
 pub mod test_machine;
 pub mod wago_power;
 pub mod winder2;
+pub mod wago_750_530_example;
 
 pub const VENDOR_QITECH: u16 = 0x0001;
 pub const MACHINE_WINDER_V1: u16 = 0x0002;
