@@ -20,6 +20,8 @@ use crate::{
 
 use crate::test_machine::TestMachine;
 
+use crate::vfd::VFDMachine;
+
 use lazy_static::lazy_static;
 
 use anyhow::Error;

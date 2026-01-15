@@ -1,6 +1,6 @@
 use crate::{MachineApi, MachineMessage};
 
-use super::MockMachine;
+use super::VFDMachine;
 use control_core::socketio::{
     event::{Event, GenericEvent},
     namespace::{
@@ -14,18 +14,15 @@ use smol::channel::Sender;
 use std::sync::Arc;
 use tracing::instrument;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub enum Mode {
-    Standby,
-    Running,
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub enum Direction {
+    Forward,
+    Reverse,
 }
 
-#[derive(Serialize, Debug, Clone, Default)]
+#[derive(Serialize, Debug, Clone)]
 pub struct LiveValuesEvent {
-    pub amplitude_sum: f64,
-    pub amplitude1: f64,
-    pub amplitude2: f64,
-    pub amplitude3: f64,
+
 }
 
 impl LiveValuesEvent {
@@ -36,32 +33,26 @@ impl LiveValuesEvent {
 
 #[derive(Serialize, Debug, Clone, PartialEq, BuildEvent)]
 pub struct StateEvent {
-    pub is_default_state: bool,
-    /// sine wave frequencies in millihertz
-    pub frequency1: f64,
-    pub frequency2: f64,
-    pub frequency3: f64,
-    /// mode state
-    pub mode_state: ModeState,
+    pub motor_state: MotorState,
 }
 
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
-pub struct ModeState {
-    /// current mode
-    pub mode: Mode,
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct MotorState {
+    // pub direction: Direction,
+    // pub speed:     f32,
 }
 
-pub enum MockEvents {
+pub enum VFDEvents {
     LiveValues(Event<LiveValuesEvent>),
     State(Event<StateEvent>),
 }
 
 #[derive(Debug)]
-pub struct MockMachineNamespace {
+pub struct VFDMachineNamespace {
     pub namespace: Option<Namespace>,
 }
 
-impl CacheableEvents<Self> for MockEvents {
+impl CacheableEvents<Self> for VFDEvents {
     fn event_value(&self) -> GenericEvent {
         match self {
             Self::LiveValues(event) => event.into(),
@@ -80,18 +71,16 @@ impl CacheableEvents<Self> for MockEvents {
 }
 
 #[derive(Deserialize, Serialize)]
-/// Mutation for controlling the mock machine
+/// Mutation for controlling the VFD machine
 enum Mutation {
-    /// Set the frequency of the sine wave in millihertz
-    SetFrequency1(f64),
-    SetFrequency2(f64),
-    SetFrequency3(f64),
-    SetMode(Mode),
+    SetDirection(bool),
+    SetSpeed(f32),
 }
 
-impl NamespaceCacheingLogic<MockEvents> for MockMachineNamespace {
+//TODO; rename NamespaceCacheingLogic to NamespaceCachingLogic
+impl NamespaceCacheingLogic<VFDEvents> for VFDMachineNamespace {
     #[instrument(skip_all)]
-    fn emit(&mut self, events: MockEvents) {
+    fn emit(&mut self, events: VFDEvents) {
         let event = Arc::new(events.event_value());
         let buffer_fn = events.event_cache_fn();
 
@@ -102,7 +91,7 @@ impl NamespaceCacheingLogic<MockEvents> for MockMachineNamespace {
     }
 }
 
-impl MachineApi for MockMachine {
+impl MachineApi for VFDMachine {
     fn api_get_sender(&self) -> Sender<MachineMessage> {
         self.api_sender.clone()
     }
@@ -110,17 +99,11 @@ impl MachineApi for MockMachine {
     fn api_mutate(&mut self, request_body: Value) -> Result<(), anyhow::Error> {
         let mutation: Mutation = serde_json::from_value(request_body)?;
         match mutation {
-            Mutation::SetFrequency1(frequency) => {
-                self.set_frequency1(frequency);
+            Mutation::SetDirection(reverse) => {
+                self.set_direction(if reverse { Direction::Reverse } else { Direction::Forward });
             }
-            Mutation::SetFrequency2(frequency) => {
-                self.set_frequency2(frequency);
-            }
-            Mutation::SetFrequency3(frequency) => {
-                self.set_frequency3(frequency);
-            }
-            Mutation::SetMode(mode) => {
-                self.set_mode(mode);
+            Mutation::SetSpeed(speed) => {
+                self.set_speed(speed);
             }
         }
         Ok(())
