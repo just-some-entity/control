@@ -14,6 +14,8 @@ pub mod act;
 pub mod api;
 pub mod new;
 
+pub mod us_3202510;
+
 #[derive(Debug)]
 pub struct VFDMachine {
     api_receiver: Receiver<MachineMessage>,

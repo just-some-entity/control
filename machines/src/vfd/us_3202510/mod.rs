@@ -77,7 +77,7 @@ impl From<US3202510Requests> for u16 {
 impl TryFrom<u16> for US3202510Requests {
     type Error = ();
 
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::None),
             _ => Err(()),
@@ -316,7 +316,7 @@ impl US3202510 {
         if resp.data.len() < 3 {
             return;
         }
-2
+
         let status_bytes: [u8; 2] = match resp.data[1..3].try_into() {
             Ok(bytes) => bytes,
             Err(_) => return,

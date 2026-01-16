@@ -3,8 +3,10 @@ use std::time::Instant;
 use super::{
     VFDMachine,
     api::{VFDMachineNamespace},
+    
+    us_3202510::US3202510
 };
-use crate::{MachineNewHardware, MachineNewParams, MachineNewTrait};
+
 use anyhow::Error;
 
 use crate::{
@@ -15,8 +17,18 @@ use crate::{
 use smol::lock::RwLock;
 use std::sync::Arc;
 
-use ethercat_hal::devices::{wago_750_354::{WAGO_750_354_IDENTITY_A, Wago750_354}, wago_modules::wago_750_652::Wago750_652};
+use ethercat_hal::devices::{wago_750_354::{WAGO_750_354_IDENTITY_A, Wago750_354}, wago_modules::wago_750_652::{Wago750_652, Wago750_652Port}};
 use ethercat_hal::devices::{EthercatDevice, downcast_device};
+
+use ethercat_hal::{
+    devices::{
+
+    },
+    io::{
+        analog_input::AnalogInput, digital_output::DigitalOutput,
+        serial_interface::SerialInterface, temperature_input::TemperatureInput,
+    },
+};
 
 impl MachineNewTrait for VFDMachine {
     fn new<'maindevice, 'subdevices>(
@@ -68,33 +80,32 @@ impl MachineNewTrait for VFDMachine {
 
             let dev = coupler.slot_devices.get(1).unwrap().clone().unwrap();
 
-            let wago750_652: Arc<RwLock<Wago750_652>> = downcast_device::<Wago750_652>(dev).await.?;
+            let wago750_652: Arc<RwLock<Wago750_652>> = downcast_device::<Wago750_652>(dev).await?;
 
+            let inverter = US3202510::new(SerialInterface::new(wago750_652, Wago750_652Port::SI1));
+            
+            let now = Instant::now();
+            let (sender, receiver) = smol::channel::unbounded();
+            let mut vfd_machine = Self {
+                main_sender: params.main_thread_channel.clone(),
+                api_receiver: receiver,
+                api_sender: sender,
+                machine_identification_unique: params.get_machine_identification_unique(),
+                namespace: VFDMachineNamespace {
+                    namespace: params.namespace.clone(),
+                },
+                last_measurement_emit: now,
 
-            let inverter = 
-        });
+                direction: super::api::Direction::Forward,
+                speed: 0.0,
 
-        let now = Instant::now();
-        let (sender, receiver) = smol::channel::unbounded();
-        let mut vfd_machine = Self {
-            main_sender: params.main_thread_channel.clone(),
-            api_receiver: receiver,
-            api_sender: sender,
-            machine_identification_unique: params.get_machine_identification_unique(),
-            namespace: VFDMachineNamespace {
-                namespace: params.namespace.clone(),
-            },
-            last_measurement_emit: now,
+                emitted_default_state: false,
+                last_emitted_event: None,
+            };
 
-            direction: super::api::Direction::Forward,
-            speed: 0.0,
+            vfd_machine.emit_state();
 
-            emitted_default_state: false,
-            last_emitted_event: None,
-        };
-
-        vfd_machine.emit_state();
-
-        Ok(vfd_machine)
+            Ok(vfd_machine)
+        })
     }
 }
