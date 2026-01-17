@@ -30,7 +30,7 @@ pub mod serial;
 pub mod test_machine;
 pub mod wago_power;
 pub mod winder2;
-pub mod vfd;
+pub mod pellet;
 
 pub const VENDOR_QITECH: u16 = 0x0001;
 pub const MACHINE_WINDER_V1: u16 = 0x0002;
@@ -47,6 +47,8 @@ pub const IP20_TEST_MACHINE: u16 = 0x0034;
 pub const ANALOG_INPUT_TEST_MACHINE: u16 = 0x0035;
 
 pub const MACHINE_VFD: u16 = 0x00FF;
+
+pub const MACHINE_PELLET: u16 = 0x00AA;
 
 use serde_json::Value;
 use smol::lock::RwLock;

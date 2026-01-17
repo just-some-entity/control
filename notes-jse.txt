@@ -1,0 +1,20 @@
+
+
+allocation:
+- further increase reliability of the system by 
+  using a custom allocator with a preallocated buffer of ~128mb
+  instead of Global since max memory footprint is known at compile time.
+
+serial_interface:
+- shared solution for devices controlled directly via usb or a serial interface like the wago 750-653 
+
+server/src/main.rs:
+- tight coupling with LaserMachine inside handle_serial_device_hotplug
+
+machines/src/serial/registry.rs:
+- new_serial_device is unused. What is it's purpose?
+- each device is directly coupled to a machine (). Should be modular
+
+
+
+- common interface 
