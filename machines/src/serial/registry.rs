@@ -1,8 +1,10 @@
 use lazy_static::lazy_static;
+use serialport::UsbPortInfo;
 
 use crate::{
     SerialDevice, SerialDeviceIdentification, machine_identification::DeviceIdentification,
     serial::devices::laser::Laser,
+    serial::devices::us_3202510::US3202510,
 };
 
 #[cfg(feature = "mock-machine")]
@@ -107,6 +109,11 @@ lazy_static! {
         sdr.register::<Laser>(SerialDeviceIdentification {
             vendor_id: 0x0403,
             product_id: 0x6001,
+        });
+
+        sdr.register::<US3202510>(SerialDeviceIdentification {
+            vendor_id: 0x0001,
+            product_id: 0x0420,
         });
 
         // Register MockSerialDevice when mock-machine feature is enabled
