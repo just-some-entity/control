@@ -1,0 +1,19 @@
+[package]
+name = "serial-hal"
+version = "0.1.0"
+edition = "2026"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0.100"
+units = { path = "../units" }
+misc = { path = "../misc" }
+bitvec = { version = "1.0.1", features = ["alloc"] }
+smol = "2.0.2"
+rand = "0.9.2"
+tracing = "0.1.44"
+
+[dev-dependencies]
+approx = "0.5.1"

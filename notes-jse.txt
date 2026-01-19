@@ -1,9 +1,21 @@
 
 
+
+assumptions/assertions:
+- MainLoop is extremely fast
+
+
+
+
 allocation:
 - further increase reliability of the system by 
   using a custom allocator with a preallocated buffer of ~128mb
   instead of Global since max memory footprint is known at compile time.
+
+shared state/usage of Box/Arc<RwLock>:
+- Replace with better pattern like Qt/Qml's sync pattern or 
+
+- Since server application
 
 serial_interface:
 - shared solution for devices controlled directly via usb or a serial interface like the wago 750-653 
@@ -16,5 +28,5 @@ machines/src/serial/registry.rs:
 - each device is directly coupled to a machine (). Should be modular
 
 
-
-- common interface 
+docs/actors.md:
+- trait Actors doesn't exist, either define or remove docs
