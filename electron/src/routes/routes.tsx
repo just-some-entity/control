@@ -43,6 +43,11 @@ import { Laser1GraphsPage } from "@/machines/laser/laser1/Laser1Graph";
 import { Laser1Page } from "@/machines/laser/laser1/Laser1Page";
 import { Laser1PresetsPage } from "@/machines/laser/laser1/Laser1PresetsPage";
 
+import { Pellet1Page } from "@/machines/pellet_machine/pellet_machine1/Page";
+import { Pellet1ControlPage } from "@/machines/pellet_machine/pellet_machine1/ControlPage";
+import { Pellet1GraphsPage } from "@/machines/pellet_machine/pellet_machine1/Graph";
+import { Pellet1PresetsPage } from "@/machines/pellet_machine/pellet_machine1/PresetsPage";
+
 import { Mock1ControlPage } from "@/machines/mock/mock1/Mock1ControlPage";
 import { Mock1GraphPage } from "@/machines/mock/mock1/Mock1Graph";
 import { Mock1ManualPage } from "@/machines/mock/mock1/Mock1Manual";
@@ -230,6 +235,32 @@ export const winder2PresetsRoute = createRoute({
   component: () => <Winder2PresetsPage />,
 });
 
+// --- pellet_machine
+export const pellet_machine1SerialRoute = createRoute({
+  getParentRoute: () => machinesRoute,
+  path: "pellet_machine1/$serial",
+  component: () => <Pellet1Page />,
+});
+
+export const pellet_machine1ControlRoute = createRoute({
+  getParentRoute: () => pellet_machine1SerialRoute,
+  path: "control",
+  component: () => <Pellet1ControlPage />,
+});
+
+export const pellet_machine1GraphsRoute = createRoute({
+  getParentRoute: () => pellet_machine1SerialRoute,
+  path: "graphs",
+  component: () => <Pellet1GraphsPage />,
+});
+
+export const pellet_machine1PresetsRoute = createRoute({
+  getParentRoute: () => pellet_machine1SerialRoute,
+  path: "presets",
+  component: () => <Pellet1PresetsPage />,
+});
+
+// --- laser
 export const laser1SerialRoute = createRoute({
   getParentRoute: () => machinesRoute,
   path: "laser1/$serial",
@@ -428,11 +459,19 @@ export const rootTree = RootRoute.addChildren([
       metricsRoute,
     ]),
     machinesRoute.addChildren([
+      
       laser1SerialRoute.addChildren([
         laser1ControlRoute,
         laser1GraphsRoute,
         laser1PresetsRoute,
       ]),
+      
+      pellet_machine1SerialRoute.addChildren([
+        pellet_machine1ControlRoute,
+        pellet_machine1GraphsRoute,
+        pellet_machine1PresetsRoute,
+      ]),
+      
       testMachineSerialRoute.addChildren([testMachineControlRoute]),
 
       analogInputTestMachineSerialRoute.addChildren([

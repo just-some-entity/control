@@ -1,5 +1,6 @@
 use crate::analog_input_test_machine::AnalogInputTestMachine;
 use crate::ip20_test_machine::IP20TestMachine;
+use crate::pellet_machine::PelletMachine;
 #[cfg(feature = "mock-machine")]
 use crate::{
     extruder1::mock::ExtruderV2 as ExtruderV2Mock1, extruder2::mock::ExtruderV2 as ExtruderV2Mock2,
@@ -115,6 +116,9 @@ lazy_static! {
 
         #[cfg(not(feature = "mock-machine"))]
         mc.register::<LaserMachine>(LaserMachine::MACHINE_IDENTIFICATION);
+
+        #[cfg(not(feature = "mock-machine"))]
+        mc.register::<PelletMachine>(PelletMachine::MACHINE_IDENTIFICATION);
 
         #[cfg(not(feature = "mock-machine"))]
         mc.register::<BufferV1>(BufferV1::MACHINE_IDENTIFICATION);

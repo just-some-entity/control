@@ -18,7 +18,7 @@ use crate::{
     VENDOR_QITECH, 
     machine_identification::{
         DeviceHardwareIdentification, DeviceHardwareIdentificationSerial, DeviceIdentification, DeviceMachineIdentification, MachineIdentification, MachineIdentificationUnique
-    }, serial::devices::us_3202510::{Config, REQUESTS, RotationState, modbus_rtu_ex::Interface}
+    }, serial::devices::us_3202510::{Config, RotationState, modbus_rtu_ex}
 };
 
 use serialport::ClearBuffer;
@@ -59,7 +59,7 @@ impl SerialDeviceNew for US3202510
         
         let port = create_port(&params.path)?;
         
-        let interface = Interface::<1>::new(&REQUESTS, port)?;
+        let interface = modbus_rtu_ex::Interface::<9>::new(port)?;
 
         let _self = Arc::new(RwLock::new(Self {
             path: params.path.clone(),
@@ -70,6 +70,7 @@ impl SerialDeviceNew for US3202510
                 deceleration_level: 7,
             },
             status: None,
+            failed_attempts: 0,
             interface,
         }));
         
@@ -92,5 +93,5 @@ fn create_port(path: &String) -> Result<Box<dyn SerialPort>, anyhow::Error>
     port.write_request_to_send(true).ok();
     port.clear(ClearBuffer::All).ok();
     
-    return Ok(port);
+    Ok(port)
 }

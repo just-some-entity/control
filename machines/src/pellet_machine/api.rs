@@ -14,17 +14,9 @@ use smol::channel::Sender;
 use std::sync::Arc;
 use tracing::instrument;
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RunState {
-    Stopped,
-    Forward,
-    Reverse,
-}
-
 #[derive(Serialize, Debug, Clone)]
 pub struct LiveValuesEvent 
 {
-    pub run_state: RunState,
     pub voltage: f64,
     pub current: f64,
     pub temperature: f64,
@@ -45,16 +37,30 @@ impl LiveValuesEvent {
 pub struct StateEvent {
     pub is_default_state: bool,
     
-    pub motor_state: MotorState,
+    pub inverter_state: InverterState,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
-pub struct MotorState 
+pub struct InverterState 
 {
-    pub run_state: RunState,
-    pub frequency: f64,
-    pub acceleration_time: f64,
-    pub deceleration_time: f64,
+    /// RUN (Inverter running)
+    pub running: bool,
+    /// Forward running motor spins forward
+    pub forward_running: bool,
+    /// Reverse running motor spins backwards
+    pub reverse_running: bool,
+    
+    pub frequency_target:  u16,
+    
+    pub acceleration_level: u8,
+    
+    pub deceleration_level: u8,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct RotationState 
+{
+    pub forward: bool,
 }
 
 pub enum PelletMachineEvents {
@@ -69,11 +75,12 @@ pub struct PelletMachineNamespace {
 
 #[derive(Deserialize, Serialize)]
 /// Mutation for controlling the Pellet machine
-enum Mutation {
-    SetRunState(RunState),
-    SetSpeed(f32),
-    SetAccelerationTime(u8),
-    SetDecelerationTime(u8),
+enum Mutation 
+{
+    // SetRunState(RunState),
+    // SetSpeed(f32),
+    // SetAccelerationTime(u8),
+    // SetDecelerationTime(u8),
 }
 
 impl MachineApi for PelletMachine {
@@ -81,22 +88,31 @@ impl MachineApi for PelletMachine {
         self.api_sender.clone()
     }
 
-    fn api_mutate(&mut self, request_body: Value) -> Result<(), anyhow::Error> {
+    fn api_mutate(&mut self, request_body: Value) -> Result<(), anyhow::Error> 
+    {
+        _ = request_body;
+        
+        /*
         let mutation: Mutation = serde_json::from_value(request_body)?;
-        match mutation {
-            
-            Mutation::SetRunState(state) => {
-                self.set_run_state(state);
-            },
-            
-            Mutation::SetDirection(reverse) => {
-                self.set_direction(if reverse { Direction::Reverse } else { Direction::Forward });
+        match mutation 
+        {
+            Mutation::SetRunState(state) => 
+            {
+                // self.set_run_state(state);
             }
-            Mutation::SetSpeed(speed) => {
-                self.set_speed(speed);
+            Mutation::SetDirection(reverse) => 
+            {
+                // self.set_direction(if reverse { Direction::Reverse } else { Direction::Forward });
+            }
+            Mutation::SetSpeed(speed) => 
+            {
+                // self.set_speed(speed);
             }
         }
         Ok(())
+        */
+        
+        todo!()
     }
 
     fn api_event_namespace(&mut self) -> Option<Namespace> {

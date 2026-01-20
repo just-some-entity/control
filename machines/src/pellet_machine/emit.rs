@@ -1,28 +1,17 @@
 
 use crate::pellet_machine::PelletMachine;
 
-use crate::pellet_machine::api::{LiveValuesEvent, MotorState, PelletMachineEvents, StateEvent};
-
-use control_core::helpers::hasher_serializer::hash_with_serde_model;
+use crate::pellet_machine::api::{InverterState, LiveValuesEvent, PelletMachineEvents, StateEvent};
 
 use control_core::socketio::event::BuildEvent;
 
 use control_core::socketio::namespace::NamespaceCacheingLogic;
 
-use units::angular_velocity::AngularVelocity;
-
-use units::pressure::{Pressure, bar};
-
-use units::thermodynamic_temperature::ThermodynamicTemperature;
-
-use units::{angular_velocity::revolution_per_minute, thermodynamic_temperature::degree_celsius};
-
-
 impl PelletMachine
 {
     pub fn emit_state(&mut self) 
     {
-        let event = self.create_live_values_event().build();
+        let event = self.create_state_event().build();
         self.namespace.emit(PelletMachineEvents::State(event));
         self.emitted_default_state = true;
     }
@@ -38,27 +27,48 @@ impl PelletMachine
         StateEvent 
         {
             is_default_state: !self.emitted_default_state,
-            motor_state: MotorState {
-                run_state: self.run_state,
-                frequency: self.frequency_target,
-                acceleration_time: self.acceleration_time_step,
-                deceleration_time: self.deceleration_time_step,
+            inverter_state: InverterState {
+                running:            false,
+                forward_running:    false,
+                reverse_running:    false,
+                frequency_target:   50,
+                acceleration_level: 7,
+                deceleration_level: 7,
             },
         }
     }
 
     pub fn create_live_values_event(&mut self) -> LiveValuesEvent
     {
+        let inverter = smol::block_on(async 
+        {
+           self.inverter.read().await
+        });
+        
+        if let Some(status) = inverter.status
+        {
+            _ = status;
+            return LiveValuesEvent {
+                voltage:           0.0,
+                current:           0.0,
+                temperature:       0.0,
+                system_status:     0.0,
+                error_code:        0,
+                frequency:         0.0,
+                acceleration_time: 0.0,
+                deceleration_time: 0.0,
+            };
+        }
+        
         LiveValuesEvent {
-            run_state: self.run_state,
-            voltage: self.voltage,
-            current: self.current,
-            temperature: self.temperature,
-            system_status: self.system_status,
-            error_code: self.error_code,
-            frequency: self.frequency_actual,
-            acceleration_time: self.acceleration_time_step,
-            deceleration_time: self.acceleration_time_step,
+            voltage:           0.0,
+            current:           0.0,
+            temperature:       0.0,
+            system_status:     0.0,
+            error_code:        0,
+            frequency:         0.0,
+            acceleration_time: 0.0,
+            deceleration_time: 0.0,
         }
     }
 }

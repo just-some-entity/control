@@ -1,6 +1,8 @@
 #[derive(Debug, Clone, Copy)]
-pub enum US3202510Register 
+pub enum Register 
 {
+    // Holding Registers (RW): 0x2 offset
+    
     /// Register 0x0002
     SetFrequency,
 
@@ -11,7 +13,9 @@ pub enum US3202510Register
     AccelerationTime,
 
     /// Register 0x0005
-    DeacelerationTime,
+    DecelerationTime,
+
+    // Input Registers (RO): 0x8 offset
 
     /// Register 0x0008
     BusVoltage,
@@ -29,34 +33,31 @@ pub enum US3202510Register
     ErrorCode,
 
     /// Register 0x000D
-    CurrentOperatingFrequency,
+    CurrentFrequency,
 }
 
-const HOLD_REGISTER:  u16 = 0x2;
-const INPUT_REGISTER: u16 = 0x8;
-
-
-impl US3202510Register 
+impl Register 
 {
     pub const fn address(self) -> u16 
     {
-        match self {
-            US3202510Register::SetFrequency => HOLD_REGISTER + 0,            // 0x0002
-            US3202510Register::RunCommand => HOLD_REGISTER + 1,              // 0x0003
-            US3202510Register::AccelerationTime => HOLD_REGISTER + 2,        // 0x0004
-            US3202510Register::DeacelerationTime => HOLD_REGISTER + 3,       // 0x0005
+        const HOLD_REGISTER_OFFSET:  u16 = 0x2;
+        const INPUT_REGISTER_OFFSET: u16 = 0x8;
 
-            US3202510Register::BusVoltage => INPUT_REGISTER + 0,             // 0x0008
-            US3202510Register::LineCurrent => INPUT_REGISTER + 1,            // 0x0009
-            US3202510Register::DriveTemperature => INPUT_REGISTER + 2,       // 0x000A
-            US3202510Register::SystemStatus => INPUT_REGISTER + 3,           // 0x000B
-            US3202510Register::ErrorCode => INPUT_REGISTER + 4,              // 0x000C
-            US3202510Register::CurrentOperatingFrequency => INPUT_REGISTER + 5, // 0x000D
+        match self 
+        {
+            // Holding Registers (RW): 0x2 offset
+            Register::SetFrequency     => HOLD_REGISTER_OFFSET,     // 0x0002
+            Register::RunCommand       => HOLD_REGISTER_OFFSET + 1, // 0x0003
+            Register::AccelerationTime => HOLD_REGISTER_OFFSET + 2, // 0x0004
+            Register::DecelerationTime => HOLD_REGISTER_OFFSET + 3, // 0x0005
+
+            // Input Registers (RO): 0x8 offset
+            Register::BusVoltage       => INPUT_REGISTER_OFFSET,     // 0x0008
+            Register::LineCurrent      => INPUT_REGISTER_OFFSET + 1, // 0x0009
+            Register::DriveTemperature => INPUT_REGISTER_OFFSET + 2, // 0x000A
+            Register::SystemStatus     => INPUT_REGISTER_OFFSET + 3, // 0x000B
+            Register::ErrorCode        => INPUT_REGISTER_OFFSET + 4, // 0x000C
+            Register::CurrentFrequency => INPUT_REGISTER_OFFSET + 5, // 0x000D
         }
-    }
-
-    const fn address_be_bytes(self) -> [u8; 2]
-    {
-        self.address().to_be_bytes()
     }
 }

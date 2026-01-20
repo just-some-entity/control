@@ -198,7 +198,7 @@ export const extruder2: MachineProperties = {
   icon: "qi:Extruder",
   machine_identification: {
     vendor: VENDOR_QITECH,
-    machine: 0x0004,
+    machine: 0x0004, //0x0004
   },
   device_roles: [
     {
@@ -298,6 +298,18 @@ export const laser1: MachineProperties = {
   machine_identification: {
     vendor: VENDOR_QITECH,
     machine: 0x0006,
+  },
+  device_roles: [],
+};
+
+export const pellet_machine: MachineProperties = {
+  name: "Pellet Machine",
+  version: "V1",
+  slug: "pellet_machine1",
+  icon: "lu:CircleDotDashed",
+  machine_identification: {
+    vendor: VENDOR_QITECH,
+    machine: 0x000B,
   },
   device_roles: [],
 };
@@ -538,6 +550,7 @@ export const machineProperties: MachineProperties[] = [
   extruder3,
   extruder2,
   laser1,
+  pellet_machine,
   mock1,
   buffer1,
   wagoPower1,
