@@ -6,6 +6,8 @@ use control_core::{
 };
 use units::{ConstZero, Frequency};
 
+use anyhow::anyhow;
+
 use super::US3202510;
 
 use crate::{
@@ -16,10 +18,14 @@ use crate::{
     VENDOR_QITECH, 
     machine_identification::{
         DeviceHardwareIdentification, DeviceHardwareIdentificationSerial, DeviceIdentification, DeviceMachineIdentification, MachineIdentification, MachineIdentificationUnique
-    }, serial::devices::us_3202510::Config
+    }, serial::devices::us_3202510::{Config, REQUESTS, RotationState, modbus_ex::Interface}
 };
 
-use std::{sync::Arc};
+use serialport::ClearBuffer;
+use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
+
+
+use std::{sync::Arc, time::Duration};
 
 impl SerialDevice for US3202510 {}
 
@@ -50,18 +56,41 @@ impl SerialDeviceNew for US3202510
                 },
             ),
         };
-            
+        
+        let port = create_port(&params.path)?;
+        
+        let interface = Interface::<1>::new(&REQUESTS, port)?;
+
         let _self = Arc::new(RwLock::new(Self {
             path: params.path.clone(),
             config: Config {
-                rotation_state: super::RotationState::Stopped,
+                rotation_state: RotationState::Stopped,
                 frequency: Frequency::ZERO,
                 acceleration_level: 7,
                 deceleration_level: 7,
             },
             status: None,
+            interface,
         }));
         
         Ok((device_identification, _self))
     }
+}
+
+fn create_port(path: &String) -> Result<Box<dyn SerialPort>, anyhow::Error>
+{
+    let mut port: Box<dyn SerialPort> = serialport::new(path, 38_400)
+        .data_bits(DataBits::Eight)
+        .parity(Parity::None)
+        .stop_bits(StopBits::One)
+        .flow_control(FlowControl::None)
+        .timeout(Duration::from_millis(500)) // start with something forgiving
+        .open()
+        .map_err(|e| anyhow!("Failed to open port {}: {}", path, e))?;
+    
+    port.write_data_terminal_ready(true).ok();
+    port.write_request_to_send(true).ok();
+    port.clear(ClearBuffer::All).ok();
+    
+    return Ok(port);
 }
