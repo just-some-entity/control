@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 //Note: The communication grid test is modbus rtu with 8 data bits, 1 stop bit, no verification
 // and a silent wave holding rate of 9600bps
 
-mod modbus_ex;
+mod modbus_rtu_ex;
 
 mod register;
 mod requests;
@@ -17,20 +17,8 @@ pub struct US3202510
     pub config: Config,
     pub status: Option<Status>,
     
-    interface: modbus_ex::Interface<1>,
+    interface: modbus_rtu_ex::Interface<1>,
 }
-
-pub const REQUESTS: [modbus_ex::RequestEntry; 1] = [
-    modbus_ex::RequestEntry {
-        priority: 10,
-        no_response_expected: false,
-        payload: modbus_ex::Request { 
-            slave_id: 1,
-            function_code: ModbusFunctionCode::ReadInputRegister,
-            data: &[0x0, 0x0, 0x0, 0x0],
-        },
-    },
-];
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Config 
@@ -73,7 +61,7 @@ impl US3202510
     pub fn set_rotation_state(&mut self, rotation_state: RotationState)
     {
         self.config.rotation_state = rotation_state;
-        self.interface.queue_request(0);
+        self.interface.queue_request(requests::Request::StartForwardRotation.id());
     }
     
     pub fn set_frequency_target(&mut self, frequency: units::Frequency)

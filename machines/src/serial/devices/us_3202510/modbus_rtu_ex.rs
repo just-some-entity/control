@@ -1,5 +1,6 @@
 use std::{thread, time::Duration};
 
+use anyhow::{anyhow};
 use control_core::modbus::{self, ModbusFunctionCode, ModbusResponse};
 
 use serialport::SerialPort;
@@ -55,7 +56,7 @@ impl Request
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum State
 {
     Idle,
@@ -112,8 +113,9 @@ impl<const N: usize> Interface<N>
         {
             let frame = request.write_to_buf(&mut payload_buf);
             
-            port.write_all(&frame);
+            port.write_all(frame)?;
             
+            //TODO: compute proper timing
             std::thread::sleep(modbus::calculate_modbus_rtu_timeout(
                 8,
                 Duration::from_millis(10),
@@ -125,13 +127,9 @@ impl<const N: usize> Interface<N>
                 modbus::receive_data_modbus(&mut *port)?
                 .map(ModbusResponse::try_from);
                 
-            match maybe_response 
+            if let Some(response) = maybe_response
             {
-                Some(response) => 
-                {
-                    let _ = tx.send(response?).await;
-                },
-                None => {}
+                let _ = tx.send(response?).await;
             }
         }
         
@@ -150,8 +148,10 @@ impl<const N: usize> Interface<N>
         Ok(())
     }
     
-    pub fn send_request(&mut self) -> Result<(), ()>
+    pub fn send_request(&mut self) -> Result<(), anyhow::Error>
     {
+        if self.state == State::Waiting { return Err(anyhow!("Not ready")); }
+        
         let mut highest_prio_idx: usize = 0;
         let mut i: usize = 0;
         for prio in self.priority_table 
@@ -169,17 +169,18 @@ impl<const N: usize> Interface<N>
             return Ok(());
         }
         
-        let index: usize = i.into();
-        let request = self.request_table[index].payload.clone();
+        let request = self.request_table[i].payload.clone();
         
-        self.priority_table[index] = -1;
+        self.priority_table[i] = -1;
         for prio in &mut self.priority_table 
         {
             if *prio == -1 { continue; }
             *prio += 1;
         }
         
-        smol::block_on(self.req_tx.send(request)).map_err(|_| ())?;
+        smol::block_on(self.req_tx.send(request)).map_err(|_| anyhow!("Failed to send!"))?;
+
+        self.state = State::Waiting;
 
         Ok(())
     }
@@ -191,10 +192,27 @@ impl<const N: usize> Interface<N>
     
     pub fn poll_response(&mut self) -> Option<ModbusResponse>
     {
-        match self.resp_rx.try_recv() 
+        match self.resp_rx.try_recv()
         {
-            Ok(frame) => ModbusResponse::try_from(frame).ok(),
-            Err(_) => None, // No response yet    
+            Ok(response) => 
+            {
+                self.state = State::Idle;
+                Some(response)
+            }
+            Err(_) => None
+        }
+    }
+    
+    pub fn await_response(&mut self) -> Option<ModbusResponse>
+    {
+        match self.resp_rx.recv_blocking()
+        {
+            Ok(response) => 
+            {
+                self.state = State::Idle;
+                Some(response)
+            }
+            Err(_) => None
         }
     }
 }

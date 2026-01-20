@@ -18,7 +18,7 @@ use crate::{
     VENDOR_QITECH, 
     machine_identification::{
         DeviceHardwareIdentification, DeviceHardwareIdentificationSerial, DeviceIdentification, DeviceMachineIdentification, MachineIdentification, MachineIdentificationUnique
-    }, serial::devices::us_3202510::{Config, REQUESTS, RotationState, modbus_ex::Interface}
+    }, serial::devices::us_3202510::{Config, REQUESTS, RotationState, modbus_rtu_ex::Interface}
 };
 
 use serialport::ClearBuffer;
