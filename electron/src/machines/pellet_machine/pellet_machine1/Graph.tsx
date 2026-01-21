@@ -7,10 +7,10 @@ import {
 } from "@/components/graph";
 
 import React from "react";
-import { useLaser1 } from "./usePellet";
+import { usePellet1 } from "./usePellet";
 
 export function Pellet1GraphsPage() {
-    const { diameter, x_diameter, y_diameter, roundness, state } = useLaser1();
+    const { diameter, x_diameter, y_diameter, roundness, state } = usePellet1();
 
     const syncHook = useGraphSync("diameter-roundness-group");
     const targetDiameter = state?.laser_state?.target_diameter ?? 0;

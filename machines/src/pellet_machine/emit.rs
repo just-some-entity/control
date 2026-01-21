@@ -1,7 +1,7 @@
 
 use crate::pellet_machine::PelletMachine;
 
-use crate::pellet_machine::api::{InverterState, LiveValuesEvent, PelletMachineEvents, StateEvent};
+use crate::pellet_machine::api::{InverterLiveValues, InverterState, LiveValuesEvent, PelletMachineEvents, StateEvent};
 
 use control_core::socketio::event::BuildEvent;
 
@@ -28,9 +28,9 @@ impl PelletMachine
         {
             is_default_state: !self.emitted_default_state,
             inverter_state: InverterState {
-                running:            false,
-                forward_running:    false,
-                reverse_running:    false,
+                running_state:      0,
+                error_code:         0,
+                system_status:      0,
                 frequency_target:   50,
                 acceleration_level: 7,
                 deceleration_level: 7,
@@ -49,26 +49,22 @@ impl PelletMachine
         {
             _ = status;
             return LiveValuesEvent {
-                voltage:           0.0,
-                current:           0.0,
-                temperature:       0.0,
-                system_status:     0.0,
-                error_code:        0,
-                frequency:         0.0,
-                acceleration_time: 0.0,
-                deceleration_time: 0.0,
+                inverter_values: InverterLiveValues {
+                    voltage:            0.0,
+                    current:            0.0,
+                    temperature:        0.0,
+                    frequency:          0.0, 
+                }
             };
         }
         
         LiveValuesEvent {
-            voltage:           0.0,
-            current:           0.0,
-            temperature:       0.0,
-            system_status:     0.0,
-            error_code:        0,
-            frequency:         0.0,
-            acceleration_time: 0.0,
-            deceleration_time: 0.0,
+            inverter_values: InverterLiveValues {
+                voltage:            0.0,
+                current:            0.0,
+                temperature:        0.0,
+                frequency:          0.0, 
+            }
         }
     }
 }

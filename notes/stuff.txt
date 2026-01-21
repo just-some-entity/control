@@ -3,3 +3,5 @@
 
 ui:
 - add debug mode to get access to all machine UI's
+
+- fix performance issues (loading, switching a page)

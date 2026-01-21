@@ -74,10 +74,10 @@ pub struct PelletMachineNamespace {
 /// Mutation for controlling the Pellet machine
 enum Mutation 
 {
-    // SetRunState(RunState),
-    // SetSpeed(f32),
-    // SetAccelerationTime(u8),
-    // SetDecelerationTime(u8),
+    SetRunState(u8),
+    SetFrequency(u8),
+    SetAccelerationLevel(u8),
+    SetDecelerationLevel(u8),
 }
 
 impl MachineApi for PelletMachine {
@@ -87,29 +87,29 @@ impl MachineApi for PelletMachine {
 
     fn api_mutate(&mut self, request_body: Value) -> Result<(), anyhow::Error> 
     {
-        _ = request_body;
-        
-        /*
         let mutation: Mutation = serde_json::from_value(request_body)?;
         match mutation 
         {
             Mutation::SetRunState(state) => 
             {
+                
                 // self.set_run_state(state);
             }
-            Mutation::SetDirection(reverse) => 
+            Mutation::SetFrequency(frequency) => 
             {
-                // self.set_direction(if reverse { Direction::Reverse } else { Direction::Forward });
+                self.set_frequency(frequency);
             }
-            Mutation::SetSpeed(speed) => 
+            Mutation::SetAccelerationLevel(speed) => 
+            {
+                // self.set_speed(speed);
+            }
+            Mutation::SetDecelerationLevel(speed) => 
             {
                 // self.set_speed(speed);
             }
         }
-        Ok(())
-        */
         
-        todo!()
+        Ok(())
     }
 
     fn api_event_namespace(&mut self) -> Option<Namespace> {

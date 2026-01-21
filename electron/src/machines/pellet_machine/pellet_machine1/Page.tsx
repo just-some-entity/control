@@ -14,12 +14,12 @@ export function Pellet1Page() {
                     title: "Control",
                     icon: "lu:CirclePlay",
                 },
-                {
-                    link: "graphs",
-                    activeLink: "graphs",
-                    title: "Graphs",
-                    icon: "lu:ChartSpline",
-                },
+                // {
+                //     link: "graphs",
+                //     activeLink: "graphs",
+                //     title: "Graphs",
+                //     icon: "lu:ChartSpline",
+                // },
                 // {
                 //   link: "settings",
                 //   activeLink: "settings",
@@ -32,12 +32,12 @@ export function Pellet1Page() {
                 //     title: "Manual",
                 //     icon: "lu:BookOpen",
                 // },
-                {
-                    link: "presets",
-                    activeLink: "presets",
-                    title: "Presets",
-                    icon: "lu:Save",
-                },
+                // {
+                //     link: "presets",
+                //     activeLink: "presets",
+                //     title: "Presets",
+                //     icon: "lu:Save",
+                // },
             ]}
         />
     );

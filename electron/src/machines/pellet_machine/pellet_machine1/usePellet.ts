@@ -1,31 +1,13 @@
 import { toastError } from "@/components/Toast";
 import { useMachineMutate as useMachineMutation } from "@/client/useClient";
 import { MachineIdentificationUnique } from "@/machines/types";
-import { laser1 } from "@/machines/properties";
+import { pellet_machine } from "@/machines/properties";
 import { pellet_machine1SerialRoute } from "@/routes/routes";
 import { z } from "zod";
 import { usePellet1Namespace, StateEvent } from "./namespace";
 import { useEffect, useMemo } from "react";
 import { useStateOptimistic } from "@/lib/useStateOptimistic";
 import { produce } from "immer";
-
-function initBridge(machine_identification_unique: MachineIdentificationUnique) 
-{
-    
-}
-/*
-    state: StateEvent | null;
-    defaultState: StateEvent | null;
-
-    // Time series data for live values
-    frequency: TimeSeries;
-    temperature: TimeSeries;
-    voltage: TimeSeries;
-    current: TimeSeries;
-
-    system_status: number;
-    error_code: number | null;
-*/
 
 function usePellet(machine_identification_unique: MachineIdentificationUnique) {
     // Get consolidated state and live values from namespace
@@ -62,6 +44,21 @@ function usePellet(machine_identification_unique: MachineIdentificationUnique) {
     const schemaDecelerationLevel = z.object({ SetDecelerationLevel: z.number() });
     const { request: requestDecelerationLevel } = useMachineMutation(schemaDecelerationLevel);
 
+    const SetRunMode = (run_mode: number) => {
+      updateStateOptimistically(
+        (current) => {
+          current.data.inverter_state.running_state = run_mode;
+        },
+        () =>
+          requestRunMode({
+            machine_identification_unique,
+            data: {
+              SetRunMode: run_mode,
+            },
+          }),
+      );
+    };
+
     const SetFrequencyTarget = (frequency_target: number) => 
     {
       updateStateOptimistically(
@@ -69,74 +66,77 @@ function usePellet(machine_identification_unique: MachineIdentificationUnique) {
           current.data.inverter_state.frequency_target = frequency_target;
         },
         () =>
-          requestRunMode({
+          requestFrequencyTarget({
             machine_identification_unique,
             data: {
-              SetRunMode: frequency_target,
+              SetFrequencyTarget: frequency_target,
             },
           }),
       );
     };
 
-    const setLowerTolerance = (lower_tolerance: number) => {
+    const SetAccelerationLevel = (acceleration_level: number) => {
         updateStateOptimistically(
             (current) => {
-                current.data.laser_state.lower_tolerance = lower_tolerance;
+            current.data.inverter_state.acceleration_level = acceleration_level;
             },
             () =>
-                requestLowerTolerance({
-                    machine_identification_unique,
-                    data: {
-                        SetLowerTolerance: lower_tolerance,
-                    },
-                }),
+            requestAccelerationLevel({
+                machine_identification_unique,
+                data: {
+                SetAccelerationLevel: acceleration_level,
+                },
+            }),
         );
     };
 
-    const setHigherTolerance = (higher_tolerance: number) => {
+    const SetDecelerationLevel = (deceleration_level: number) => {
         updateStateOptimistically(
             (current) => {
-                current.data.laser_state.higher_tolerance = higher_tolerance;
+            current.data.inverter_state.deceleration_level = deceleration_level;
             },
             () =>
-                requestHigherTolerance({
-                    machine_identification_unique,
-                    data: {
-                        SetHigherTolerance: higher_tolerance,
-                    },
-                }),
+            requestDecelerationLevel({
+                machine_identification_unique,
+                data: {
+                SetDecelerationLevel: deceleration_level,
+                },
+            }),
         );
     };
 
     return {
-        // Consolidated state
-        state: stateOptimistic.value?.data,
+      // Consolidated state
+      state: stateOptimistic.value?.data,
 
-        // Default state for initial values
-        defaultState: defaultState?.data,
+      // Default state for initial values
+      defaultState: defaultState?.data,
 
-        // Live values (TimeSeries)
-        diameter,
-        x_diameter,
-        y_diameter,
-        roundness,
+      // Live values (TimeSeries)
+      frequency,
+      temperature,
+      voltage,
+      current,
 
-        // Loading states
-        isLoading: stateOptimistic.isOptimistic,
-        isDisabled: !stateOptimistic.isInitialized,
+      // Loading states
+      isLoading: stateOptimistic.isOptimistic,
+      isDisabled: !stateOptimistic.isInitialized,
 
-        // Action functions (verb-first)
-        setTargetDiameter,
-        setLowerTolerance,
-        setHigherTolerance,
+      // Action functions
+      SetRunMode,
+      SetFrequencyTarget,
+      SetAccelerationLevel,
+      SetDecelerationLevel,
     };
 }
 
-export function useLaser1() {
+export function usePellet1() 
+{
     const { serial: serialString } = pellet_machine1SerialRoute.useParams();
 
     // Memoize the machine identification to keep it stable between renders
-    const machineIdentification: MachineIdentificationUnique = useMemo(() => {
+    const machineIdentification: MachineIdentificationUnique = useMemo(() => 
+    {
         const serial = parseInt(serialString); // Use 0 as fallback if NaN
 
         if (isNaN(serial)) {
@@ -155,8 +155,8 @@ export function useLaser1() {
         }
 
         return {
-            machine_identification: laser1.machine_identification,
-            serial,
+          machine_identification: pellet_machine.machine_identification,
+          serial,
         };
     }, [serialString]); // Only recreate when serialString changes
 

@@ -8,7 +8,7 @@ import { MinMaxValue, TIMEFRAME_OPTIONS } from "@/control/MinMaxValue";
 import { EditValue } from "@/control/EditValue";
 import { Label } from "@/control/Label";
 
-import { useLaser1 as usePellet1 } from "./usePellet";
+import { usePellet1 as usePellet1 } from "./usePellet";
 
 import { SelectionGroupBoolean } from "@/control/SelectionGroup";
 import { createTimeSeries, TimeSeries } from "@/lib/timeseries";
@@ -17,24 +17,30 @@ import { Badge } from "@/components/ui/badge";
 
 export function Pellet1ControlPage() {
     const {
-        diameter,
-        x_diameter,
-        y_diameter,
-        roundness,
+        //state
         state,
         defaultState,
-        setTargetDiameter,
-        setLowerTolerance,
-        setHigherTolerance,
+        
+        //live values
+        frequency,
+        temperature,
+        voltage,
+        current,
+
+        // mutation functions
+        SetRunMode,
+        SetFrequencyTarget,
+        SetAccelerationLevel,
+        SetDecelerationLevel,
     } = usePellet1();
 
     // Extract values from consolidated state
-    const targetDiameter = state?.laser_state?.target_diameter ?? 0;
-    const lowerTolerance = state?.laser_state?.lower_tolerance ?? 0;
-    const higherTolerance = state?.laser_state?.higher_tolerance ?? 0;
+    const running_state  = state?.inverter_state?.running_state ?? 0;
+    const frequency_target = state?.inverter_state?.frequency_target ?? 0;
+    const acceleration_level = state?.inverter_state?.acceleration_level ?? 0;
+    const deceleration_level = state?.inverter_state?.deceleration_level ?? 0;
+    const system_status = state?.inverter_state?.system_status ?? 0;
 
-    // Detect if this is a 2-axis laser
-    const isTwoAxis = !!x_diameter?.current || !!y_diameter?.current;
     // Shared timeframe state (default 5 minutes)
     const [timeframe, setTimeframe] = React.useState<number>(5 * 60 * 1000);
 
@@ -61,7 +67,7 @@ export function Pellet1ControlPage() {
                             max={99}
                             renderValue={(value) => value.toFixed(0)}
                             onChange={(val) => {
-                                // setTargetDiameter(val);
+                                SetFrequencyTarget(val);
                             }}
                             defaultValue={5}
                         />
@@ -75,7 +81,7 @@ export function Pellet1ControlPage() {
                             min={1}
                             max={15}
                             renderValue={(value) => value.toFixed(0)}
-                            onChange={(val) => setLowerTolerance(val)}
+                            onChange={(val) => SetAccelerationLevel(val)}
                             defaultValue={7}
                         />
                     </Label>
@@ -88,7 +94,7 @@ export function Pellet1ControlPage() {
                             min={1}
                             max={15}
                             renderValue={(value) => value.toFixed(0)}
-                            onChange={(val) => setLowerTolerance(val)}
+                            onChange={(val) => SetDecelerationLevel(val)}
                             defaultValue={7}
                         />
                     </Label>
@@ -105,28 +111,28 @@ export function Pellet1ControlPage() {
                         label="Frequency"
                         unit="Hz"
                         renderValue={(value) => roundToDecimals(value, 1)}
-                        timeseries={createTimeSeries().initialTimeSeries}
+                        timeseries={ frequency }
                     />
 
                     <TimeSeriesValueNumeric
                         label="Temperature"
                         unit="C"
                         renderValue={(value) => roundToDecimals(value, 1)}
-                        timeseries={createTimeSeries().initialTimeSeries}
+                        timeseries={ temperature }
                     />
 
                     <TimeSeriesValueNumeric
                         label="Voltage"
                         unit="V"
                         renderValue={(value) => roundToDecimals(value, 1)}
-                        timeseries={createTimeSeries().initialTimeSeries}
+                        timeseries={ voltage }
                     />
 
                     <TimeSeriesValueNumeric
                         label="Current"
                         unit="A"
                         renderValue={(value) => roundToDecimals(value, 1)}
-                        timeseries={createTimeSeries().initialTimeSeries}
+                        timeseries={ current }
                     />
                 </ControlCard>
             </ControlGrid>

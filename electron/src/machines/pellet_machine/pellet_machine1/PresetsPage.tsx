@@ -6,7 +6,7 @@ import { laser1 } from "@/machines/properties";
 import { PresetPreviewEntries } from "@/components/preset/PresetPreviewTable";
 import { PresetsPage } from "@/components/preset/PresetsPage";
 
-import { useLaser1 } from "./usePellet";
+import { usePellet1 } from "./usePellet";
 
 const laser1PresetDataSchema = z
     .object({
@@ -45,7 +45,7 @@ export function Pellet1PresetsPage() {
         setHigherTolerance,
         defaultState,
         state,
-    } = useLaser1();
+    } = usePellet1();
 
     const applyPreset = (preset: Preset<Laser1>) => {
         const targetDiameter = preset?.data?.targetDiameter ?? 1.75;

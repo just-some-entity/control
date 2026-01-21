@@ -69,14 +69,10 @@ impl PelletMachineNamespace
 
     async fn connected_sockets(&self) -> Vec<SocketRef> 
     {
-        if self.namespace.is_none() 
-        {
-            return vec![];
-        }
-        
-        let sockets = self.namespace.clone().unwrap().sockets.clone();
-        
-        sockets
+        if self.namespace.is_none()
+            { vec![] }
+        else
+            { self.namespace.clone().unwrap().sockets.clone() }
     }
 }
 
@@ -99,9 +95,28 @@ impl PelletMachine
         machine: MACHINE_PELLET,
     };
 
-    pub fn set_frequency(&mut self, frequency: f64)
+    pub fn set_frequency(&mut self, frequency: u8)
     {
-        _ = frequency;
-        //...
+        self.emit_state();
+    }
+    
+    pub fn set_run_mode(&mut self, run_mode: u8)
+    {
+        self.emit_state();
+    }
+    
+    pub fn set_acceleration_level(&mut self, acceleration_level: u8)
+    {
+        self.emit_state();
+    }
+    
+    pub fn set_deceleration_level(&mut self, deceleration_level: u8)
+    {
+        self.emit_state();
+    }
+    
+    pub fn update(&mut self)
+    {
+        //let laser_data = smol::block_on(async { self.inverter.read().await.get_data().await });
     }
 }

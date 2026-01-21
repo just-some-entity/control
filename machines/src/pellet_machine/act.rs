@@ -10,6 +10,8 @@ impl MachineAct for PelletMachine
 {
     fn act(&mut self, now: Instant) 
     {
+        //tracing::error!("ACT RECEIVED");
+        
         if let Ok(msg) = self.api_receiver.try_recv() 
         {
             self.act_machine_message(msg);
@@ -60,6 +62,8 @@ impl MachineAct for PelletMachine
             MachineMessage::DisconnectMachine(_machine_connection) => {}
             MachineMessage::RequestValues(sender) => 
             {
+                tracing::error!("REQUESTED VALUES");
+                
                 let state = serde_json::to_value(self.create_state_event()).expect("Failed to serialize state");
                 
                 let live_values = serde_json::to_value(self.create_live_values_event()).expect("Failed to serialize live values");
