@@ -1,3 +1,4 @@
+use core::panic;
 // external deps
 use std::{thread, time::Duration};
 use std::result::Result::Ok;
@@ -6,6 +7,7 @@ use core::mem::MaybeUninit;
 
 use anyhow::{anyhow};
 
+use bitvec::vec;
 use serialport::SerialPort;
 
 use smol::channel::{Sender, unbounded};
@@ -96,26 +98,67 @@ impl<const REGISTRY_SIZE: usize> Interface<REGISTRY_SIZE>
         {
             let frame = payload.encode_frame(&mut payload_buf);
             
+            tracing::error!("frame_data: {:?}", &frame);
+
             port.write_all(frame)?;
-            
-            //TODO: compute proper timing
-            std::thread::sleep(modbus::calculate_modbus_rtu_timeout(
-                8,
-                Duration::from_millis(10),
-                38400,
-                8,
-            ));
-            
-            if let Some(response_data) = modbus::receive_data_modbus(&mut *port)?
+
+            loop
             {
-                // Payload was validated in receive_data_modbus
-                // so assume all bytes are set correctly
-                let payload = Payload::decode_frame(response_data.as_slice())?;
-                
-                let _ = tx.send(payload).await;
+                // TODO: compute proper timing
+                std::thread::sleep(modbus::calculate_modbus_rtu_timeout(
+                    10,
+                    Duration::from_millis(55),
+                    9600,
+                    frame.len(),
+                ));
+
+                let recv_data = match modbus::receive_data_modbus(&mut *port)
+                {
+                    Ok(data) => data,
+
+                    Err(e) => 
+                    {
+                        tracing::error!("err: {}", e);
+                        continue;
+                    }
+                };
+
+                tracing::warn!("HAS DATA!");
+
+                if let Some(response_data) = recv_data
+                {
+                    tracing::warn!("PRE!");
+
+                    // Payload was validated in receive_data_modbus
+                    // so assume all bytes are set correctly
+
+                    tracing::error!("frame_data_in: {:?}", response_data.as_slice());
+
+                    let payload = match Payload::decode_frame(response_data.as_slice())
+                    {
+                        Ok(payload) => payload,
+                        Err(e) => 
+                        {
+                            tracing::error!("err: {}", e);
+                            continue;
+                        }
+                    };
+
+                    tracing::warn!("PENDING SENT!");
+
+                    let _ = tx.send(payload).await;
+
+                    tracing::warn!("SENT!");
+
+                    break;
+                }   
+
+                tracing::warn!("Unlucky Son!")
             }
         }
         
+        tracing::error!("END THREAD");
+
         Ok(())
     }
     
@@ -149,29 +192,41 @@ impl<const REGISTRY_SIZE: usize> Interface<REGISTRY_SIZE>
     {
         debug_assert!(self.is_ready);
         
-        let mut found_item: bool = false;
-        let mut highest_prio_idx: usize = 0;
-        let mut i: usize = 0;
+        let mut highest_prio_idx: Option<usize> = None;
+        let mut i: usize = 0; 
         for metadata in &self.metadata_buffer 
         {
             if !metadata.enabled { continue; }
-            if metadata.higher_priority_than(&self.metadata_buffer[highest_prio_idx])
+
+            if let Some(idx) = highest_prio_idx
             {
-                highest_prio_idx = i;
-                found_item = true;
+                if metadata.higher_priority_than(&self.metadata_buffer[idx])
+                {
+                    highest_prio_idx = Some(i);
+                }
+            } else {
+                highest_prio_idx = Some(i);
             }
-            
+
             i += 1;
         }
         
-        if !found_item { return Err(anyhow!("No Request in queue!")); }
-        
+        let idx = match highest_prio_idx 
+        {
+            Some(idx) => 
+            {
+                idx
+            }
+
+            None => { return Ok(()) }
+        };
+
         let request = unsafe
         {
-            self.payload_buffer[i].assume_init_ref().clone()
+            self.payload_buffer[idx].assume_init_ref().clone()
         };
         
-        self.metadata_buffer[i].enabled = false;
+        self.metadata_buffer[idx].enabled = false;
         
         for metadata in &mut self.metadata_buffer 
         {
@@ -180,6 +235,8 @@ impl<const REGISTRY_SIZE: usize> Interface<REGISTRY_SIZE>
             metadata.ignored_times += 1;
         }
         
+        tracing::error!("SENDING REQUEST");
+
         smol::block_on(self.req_tx.send(request)).map_err(|_| anyhow!("Failed to send!"))?;
 
         self.is_ready = false;
@@ -199,6 +256,8 @@ impl<const REGISTRY_SIZE: usize> Interface<REGISTRY_SIZE>
         {
             Ok(response) => 
             {
+                tracing::error!("ELL RESPONSO");
+
                 self.is_ready = true;
                 Some(response)
             }

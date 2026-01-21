@@ -13,7 +13,7 @@ pub enum Request
     ResetInverter,
     WriteParameter,
     
-    
+    RefreshStatus,
 }
 
 impl Request
@@ -22,6 +22,21 @@ impl Request
     {
         match self
         {
+            Request::RefreshStatus => 
+            {
+                let payload = modbus_rtu_ex::Payload::ReadInputRegister {
+                    slave_id: 1,
+                    start_address: Register::BusVoltage.address(),
+                    quantity: 6,
+                };
+
+                modbus_rtu_ex::InterfaceRequest {
+                    type_id:  0,
+                    priority: 0,
+                    payload,
+                    delay: None,
+                }
+            },
             Request::WriteRunningFrequency(frequency) => 
             {
                 let payload = modbus_rtu_ex::Payload::PresetHoldingRegister {

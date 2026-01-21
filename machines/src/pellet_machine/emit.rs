@@ -38,32 +38,30 @@ impl PelletMachine
         }
     }
 
-    pub fn create_live_values_event(&mut self) -> LiveValuesEvent
+    pub fn create_live_values_event(&self) -> LiveValuesEvent
     {
-        let inverter = smol::block_on(async 
-        {
-           self.inverter.read().await
+        let inverter = smol::block_on(async {
+            self.inverter.read().await
         });
-        
+
         if let Some(status) = inverter.status
         {
-            _ = status;
             return LiveValuesEvent {
                 inverter_values: InverterLiveValues {
-                    voltage:            0.0,
-                    current:            0.0,
-                    temperature:        0.0,
-                    frequency:          0.0, 
+                    voltage:     status.voltage.value,
+                    current:     status.current.value,
+                    temperature: status.temperature.value,
+                    frequency:   status.frequency.value, 
                 }
             };
         }
         
         LiveValuesEvent {
             inverter_values: InverterLiveValues {
-                voltage:            0.0,
-                current:            0.0,
-                temperature:        0.0,
-                frequency:          0.0, 
+                voltage:     0.0,
+                current:     0.0,
+                temperature: 0.0,
+                frequency:   0.0, 
             }
         }
     }

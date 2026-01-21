@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use control_core::modbus::modbus_crc16;
 
 
 
@@ -52,10 +53,10 @@ impl FunctionCode
     {
         match value 
         {
-            0 => Some(FunctionCode::ReadHoldingRegister),
-            1 => Some(FunctionCode::ReadInputRegister),
-            2 => Some(FunctionCode::PresetHoldingRegister),
-            3 => Some(FunctionCode::Diagnostic),
+            3 => Some(FunctionCode::ReadHoldingRegister),
+            4 => Some(FunctionCode::ReadInputRegister),
+            6 => Some(FunctionCode::PresetHoldingRegister),
+            8 => Some(FunctionCode::Diagnostic),
             _ => None,
         }
     }
@@ -106,7 +107,7 @@ impl Payload
             }
         }
         
-        else { Err(anyhow!("Unsupported function code")) }
+        else { Err(anyhow!("Unsupported function code: {}", payload_bytes[1])) }
     }
     
     /// Convert to a Modbus RTU frame (without CRC)
@@ -133,21 +134,35 @@ impl Payload
             
             Payload::PresetHoldingRegister { slave_id, address, value } => 
             {
-                buf[i] = *slave_id; i += 1;
-                buf[i] = 0x06; i += 1;
-                buf[i..i+2].copy_from_slice(&address.to_be_bytes()); i += 2;
-                buf[i..i+2].copy_from_slice(&value.to_be_bytes()); i += 2;
+                buf[i] = *slave_id; 
+                i += 1;
+                buf[i] = 0x06; 
+                i += 1;
+                buf[i..i+2].copy_from_slice(&address.to_be_bytes()); 
+                i += 2;
+                buf[i..i+2].copy_from_slice(&value.to_be_bytes()); 
+                i += 2;
             }
             
             Payload::Diagnostic { slave_id, sub_function, data } => 
             {
-                buf[i] = *slave_id; i += 1;
-                buf[i] = 0x08; i += 1;
+                buf[i] = *slave_id; 
+                i += 1;
+                buf[i] = 0x08; 
+                i += 1;
                 buf[i..i+2].copy_from_slice(&sub_function.to_be_bytes()); i += 2;
-                buf[i..i+data.len()].copy_from_slice(data); i += data.len();
+                buf[i..i+data.len()].copy_from_slice(data); 
+                i += data.len();
             }
         }
+
+        let crc = modbus_crc16(&buf[..i]).to_le_bytes();
         
+        buf[i] = crc[0];
+        i += 1;
+        buf[i] = crc[1];
+        i += 1;
+
         &buf[..i]
     }
 }

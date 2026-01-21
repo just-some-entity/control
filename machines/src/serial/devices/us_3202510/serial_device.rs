@@ -80,7 +80,7 @@ impl SerialDeviceNew for US3202510
 
 fn create_port(path: &String) -> Result<Box<dyn SerialPort>, anyhow::Error>
 {
-    let mut port: Box<dyn SerialPort> = serialport::new(path, 38_400)
+    let mut port: Box<dyn SerialPort> = serialport::new(path, 9600)
         .data_bits(DataBits::Eight)
         .parity(Parity::None)
         .stop_bits(StopBits::One)

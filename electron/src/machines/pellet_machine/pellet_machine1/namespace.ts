@@ -27,10 +27,12 @@ import {
  * Live values from Pellet (30 FPS)
  */
 export const liveValuesEventDataSchema = z.object({
-    frequency:   z.number(),
-    temperature: z.number(),
-    voltage:     z.number(),
-    current:     z.number(),
+    inverter_values: z.object({
+        frequency:   z.number(),
+        temperature: z.number(),
+        voltage:     z.number(),
+        current:     z.number(),
+    })
 });
 
 /**
@@ -45,7 +47,7 @@ export const stateEventDataSchema = z.object({
     acceleration_level: z.number(),
     deceleration_level: z.number(),
 
-    error_code: z.number().nullable,
+    error_code: z.number().nullable(),
     system_status: z.number(),
   }),
 });
@@ -142,14 +144,14 @@ export function pellet1MessageHandler(
             {
                 const liveValuesEvent = liveValuesEventSchema.parse(event);
                 const frequencyValue: TimeSeriesValue = {
-                  value: liveValuesEvent.data.frequency,
+                  value: liveValuesEvent.data.inverter_values.frequency,
                   timestamp: event.ts,
                 };
                 
                 updateStore((state) => ({ ...state, frequency: addFrequency(state.frequency, frequencyValue) }));
 
                 const temperatureValue: TimeSeriesValue = {
-                  value: liveValuesEvent.data.temperature,
+                  value: liveValuesEvent.data.inverter_values.temperature,
                   timestamp: event.ts,
                 };
 
@@ -159,7 +161,7 @@ export function pellet1MessageHandler(
                 }));
 
                 const voltageValue: TimeSeriesValue = {
-                  value: liveValuesEvent.data.voltage,
+                  value: liveValuesEvent.data.inverter_values.voltage,
                   timestamp: event.ts,
                 };
 
@@ -169,13 +171,13 @@ export function pellet1MessageHandler(
                 }));
 
                 const currentValue: TimeSeriesValue = {
-                  value: liveValuesEvent.data.current,
+                  value: liveValuesEvent.data.inverter_values.current,
                   timestamp: event.ts,
                 };
 
                 updateStore((state) => ({
                   ...state,
-                  temperature: addCurrent(state.current, currentValue),
+                  current: addCurrent(state.current, currentValue),
                 }));
 
 

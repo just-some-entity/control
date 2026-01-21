@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use crate::pellet_machine::MutationRequests;
 use crate::serial::devices::us_3202510::US3202510;
 use crate::serial::{registry::SERIAL_DEVICE_REGISTRY};
 use crate::{MachineNewHardware, MachineNewTrait};
@@ -43,6 +44,12 @@ impl MachineNewTrait for PelletMachine
             last_measurement_emit: Instant::now(),
             
             inverter,
+
+            mutation_request: MutationRequests {
+                frequency: None,
+                accleration_level: None,
+                decleration_level: None,
+            }
         };
 
         Ok(pellet_machine)

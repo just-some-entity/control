@@ -116,6 +116,8 @@ impl Namespace {
         event: Arc<GenericEvent>,
         buffer_fn: &Box<dyn Fn(&mut Vec<Arc<GenericEvent>>, &Arc<GenericEvent>)>,
     ) {
+        // tracing::error!("EMIT() CALLED {}", event.);
+
         // cache the event
         self.cache(event.clone(), buffer_fn);
         // emit the event - inlined from emit function

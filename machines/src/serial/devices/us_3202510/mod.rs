@@ -37,6 +37,7 @@ pub struct Config
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Status
 {
+    pub frequency: units::Frequency, // 1 - 99hz
     pub voltage: units::ElectricPotential,
     pub current: units::ElectricCurrent,
     pub temperature: units::ThermodynamicTemperature,
@@ -65,29 +66,18 @@ impl US3202510
 {
     pub fn update(&mut self)
     {
-        // not ready, try next cycle
-        if !self.interface.is_ready_to_send() 
-        { 
-            self.failed_attempts += 1;
-            
-            if self.failed_attempts >= 10 
-            {
-                tracing::error!("Failed to retrieve response > 10 times!");    
-            }
-            
-            return; 
-        }
-        
-        self.failed_attempts = 0;
-        
         if let Some(response) = self.interface.check_response()
         {
+
             self.handle_response(response);
         }
         
-        debug_assert!(self.interface.is_ready_to_send());
-        
-        _ = self.interface.send_next_request();
+        self.refresh_status();
+
+        if self.interface.is_ready_to_send()
+        {
+            _ = self.interface.send_next_request(); 
+        }
     }
     
     fn queue_request(&mut self, request: Request)
@@ -95,6 +85,11 @@ impl US3202510
         self.interface.queue_request(request.to_interface_request());
     }
     
+    pub fn refresh_status(&mut self)
+    {
+        self.queue_request(Request::RefreshStatus);
+    }
+
     pub fn set_rotation_state(&mut self, rotation_state: RotationState)
     {
         self.config.rotation_state = rotation_state;
@@ -121,6 +116,8 @@ impl US3202510
     
     fn handle_response(&mut self, response: Payload)
     {
+        tracing::error!("Got Response!");
+
         //TODO: process response
         
         _ = response;

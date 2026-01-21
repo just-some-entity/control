@@ -126,10 +126,13 @@ lazy_static! {
         #[cfg(not(feature = "mock-machine"))]
         mc.register::<AquaPathV1>(AquaPathV1::MACHINE_IDENTIFICATION);
 
+        #[cfg(not(feature = "mock-machine"))]
         mc.register::<TestMachine>(TestMachine::MACHINE_IDENTIFICATION);
 
+        #[cfg(not(feature = "mock-machine"))]
         mc.register::<IP20TestMachine>(IP20TestMachine::MACHINE_IDENTIFICATION);
 
+        #[cfg(not(feature = "mock-machine"))]
         mc.register::<AnalogInputTestMachine>(AnalogInputTestMachine::MACHINE_IDENTIFICATION);
 
         mc

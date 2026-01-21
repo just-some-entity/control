@@ -1,6 +1,6 @@
 //use serde::{Deserialize, Serialize};
 
-#[cfg(not(feature = "mock-machine"))]
+
 use crate::{
     MACHINE_PELLET, MachineMessage, VENDOR_QITECH,
     machine_identification::{MachineIdentification, MachineIdentificationUnique},
@@ -41,7 +41,17 @@ pub struct PelletMachine
     last_measurement_emit: Instant,
 
     // machine specific
-    inverter: Arc<RwLock<US3202510>>
+    inverter: Arc<RwLock<US3202510>>,
+
+    mutation_request: MutationRequests
+}
+
+#[derive(Debug)]
+pub struct MutationRequests
+{
+    frequency: Option<units::Frequency>,
+    accleration_level: Option<u8>,
+    decleration_level: Option<u8>,
 }
 
 impl Machine for PelletMachine

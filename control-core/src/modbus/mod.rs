@@ -150,6 +150,9 @@ pub fn receive_data_modbus(port: &mut dyn SerialPort) -> Result<Option<Vec<u8>>,
     if data_length == 0 {
         return Ok(None);
     }
+
+    tracing::error!("RECIEVED: {:?}", &buf[..data_length]);
+
     validate_modbus_response(buf[..data_length].to_vec()).map(Some)
 }
 

@@ -10,22 +10,33 @@ impl MachineAct for PelletMachine
 {
     fn act(&mut self, now: Instant) 
     {
-        //tracing::error!("ACT RECEIVED");
-        
         if let Ok(msg) = self.api_receiver.try_recv() 
         {
             self.act_machine_message(msg);
         };
 
-        // self.update();
+        let should_emit =
+            now.duration_since(self.last_measurement_emit)
+                > Duration::from_secs_f64(1.0 / 30.0);
 
-        // if self.did_change_state 
-        // {
-        //     self.emit_state();
-        // }
+        {
+            let mut inverter = smol::block_on(async {
+                self.inverter.write().await
+            });
 
-        // more than 33ms have passed since last emit (30 "fps" target)
-        if now.duration_since(self.last_measurement_emit) > Duration::from_secs_f64(1.0 / 30.0) 
+            if let Some(value) = self.mutation_request.frequency 
+            {
+                inverter.set_frequency_target(value);
+            }
+
+            if should_emit {
+                inverter.refresh_status();
+            }
+
+            inverter.update();
+        } // drop lock
+
+        if should_emit 
         {
             self.emit_live_values();
             self.last_measurement_emit = now;
