@@ -4,9 +4,9 @@ import React from "react";
 import laserManualContent from "@/assets/markdown/laser/manual.md?raw";
 
 export function Pellet1ManualPage() {
-  return (
-    <Page>
-      <MarkdownWithToc markdownContent={laserManualContent} />
-    </Page>
-  );
+    return (
+        <Page>
+            <MarkdownWithToc markdownContent={laserManualContent} />
+        </Page>
+    );
 }

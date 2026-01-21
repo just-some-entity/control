@@ -466,12 +466,6 @@ export const rootTree = RootRoute.addChildren([
         laser1PresetsRoute,
       ]),
       
-      pellet_machine1SerialRoute.addChildren([
-        pellet_machine1ControlRoute,
-        pellet_machine1GraphsRoute,
-        pellet_machine1PresetsRoute,
-      ]),
-      
       testMachineSerialRoute.addChildren([testMachineControlRoute]),
 
       analogInputTestMachineSerialRoute.addChildren([
@@ -519,6 +513,13 @@ export const rootTree = RootRoute.addChildren([
       wagoPower1SerialRoute.addChildren([wagoPower1ControlRoute]),
 
       buffer1SerialRoute.addChildren([buffer1ControlRoute]),
+      
+            pellet_machine1SerialRoute.addChildren([
+        pellet_machine1ControlRoute,
+        pellet_machine1GraphsRoute,
+        pellet_machine1PresetsRoute,
+      ]),
+      
     ]),
   ]),
 ]);

@@ -17,14 +17,16 @@ use tracing::instrument;
 #[derive(Serialize, Debug, Clone)]
 pub struct LiveValuesEvent 
 {
-    pub voltage: f64,
-    pub current: f64,
+    pub inverter_values: InverterLiveValues
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct InverterLiveValues 
+{
+    pub frequency:   f64,
     pub temperature: f64,
-    pub system_status: f64,
-    pub error_code: u64,
-    pub frequency: f64,
-    pub acceleration_time: f64,
-    pub deceleration_time: f64,
+    pub voltage:     f64,
+    pub current:     f64,
 }
 
 impl LiveValuesEvent {
@@ -43,18 +45,13 @@ pub struct StateEvent {
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct InverterState 
 {
-    /// RUN (Inverter running)
-    pub running: bool,
-    /// Forward running motor spins forward
-    pub forward_running: bool,
-    /// Reverse running motor spins backwards
-    pub reverse_running: bool,
-    
-    pub frequency_target:  u16,
-    
+    pub running_state:      u8,
+    pub frequency_target:   u16,
     pub acceleration_level: u8,
-    
     pub deceleration_level: u8,
+    pub error_code:         u16,
+    
+    pub system_status:      u16,
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]

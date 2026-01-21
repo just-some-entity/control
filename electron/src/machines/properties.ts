@@ -32,7 +32,7 @@ export const winder2: MachineProperties = {
   icon: "lu:Disc3",
   machine_identification: {
     vendor: VENDOR_QITECH,
-    machine: 0x0002,
+    machine: 0x0002, //2
   },
   device_roles: [
     {
@@ -550,7 +550,6 @@ export const machineProperties: MachineProperties[] = [
   extruder3,
   extruder2,
   laser1,
-  pellet_machine,
   mock1,
   buffer1,
   wagoPower1,
@@ -558,6 +557,8 @@ export const machineProperties: MachineProperties[] = [
   testmachine,
   analogInputTestMachine,
   ip20TestMachine,
+  
+  pellet_machine,
 ];
 
 export const getMachineProperties = (
