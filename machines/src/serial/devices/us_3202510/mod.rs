@@ -3,16 +3,17 @@ use serde::{Deserialize, Serialize};
 
 // internal deps
 pub use request::Request;
-pub use register::Register;
 
-use crate::serial::devices::us_3202510::modbus_rtu_ex::Payload;
+use units::{Frequency, electric_current::ampere, electric_potential::volt, frequency::hertz, thermodynamic_temperature::degree_celsius};
 
 // modules
 mod register;
 mod request;
 mod serial_device;
 
-mod modbus_rtu_ex; // TODO: move out of here
+type ModbusInterface = crate::serial::interfaces::modbus_rtu::Interface<2>;
+
+use crate::serial::{devices::us_3202510::register::InputRegister, interfaces::modbus_rtu::RequestResult};
 
 #[derive(Debug)]
 pub struct US3202510
@@ -22,14 +23,14 @@ pub struct US3202510
     pub status: Option<Status>,
     
     failed_attempts: u8,
-    interface: modbus_rtu_ex::Interface<9>,
+    interface: ModbusInterface,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Config 
 {
     pub rotation_state: RotationState,
-    pub frequency: units::Frequency, // 1 - 99hz
+    pub frequency: units::Frequency, // 0 - 99hz
     pub acceleration_level: u16, // 1 - 15
     pub deceleration_level: u16, // 1 - 15
 }
@@ -66,17 +67,34 @@ impl US3202510
 {
     pub fn update(&mut self)
     {
-        if let Some(response) = self.interface.check_response()
+        match self.interface.check_result() 
         {
-
-            self.handle_response(response);
+            Ok(maybe_result)  => 
+            {
+                if let Some(result) = maybe_result
+                {
+                    self.handle_result(result);
+                }
+            },
+            Err(e) => 
+            {
+                tracing::error!("Error reciving result: {:?}", e);
+            },
         }
         
+        //TODO: anyhow crashes system for reason?
         self.refresh_status();
 
         if self.interface.is_ready_to_send()
         {
-            _ = self.interface.send_next_request(); 
+            match self.interface.send_next_request()
+            {
+                Ok(_) => {  },
+                Err(e) => 
+                { 
+                    tracing::error!("Error sending request: {:?}", e); 
+                },
+            }
         }
     }
     
@@ -90,6 +108,14 @@ impl US3202510
         self.queue_request(Request::RefreshStatus);
     }
 
+    pub fn set_frequency_target(&mut self, frequency: units::Frequency)
+    {
+        self.config.frequency = frequency;
+        let as_hertz_u8 = frequency.get::<hertz>().round().clamp(0.0, 99.0) as u8;
+        self.queue_request(Request::SetFrequency(as_hertz_u8));
+    }
+
+/*
     pub fn set_rotation_state(&mut self, rotation_state: RotationState)
     {
         self.config.rotation_state = rotation_state;
@@ -113,14 +139,48 @@ impl US3202510
         self.config.deceleration_level = deceleration_level;
         self.queue_request(Request::StartForwardRotation);
     }
+    */
     
-    fn handle_response(&mut self, response: Payload)
+    fn handle_result(&mut self, response: RequestResult)
     {
-        tracing::error!("Got Response!");
-
-        //TODO: process response
-        
-        _ = response;
+        match response 
+        {
+            RequestResult::ReadHoldingRegisters(request_result_data) => 
+            {
+                tracing::error!("Received exception: ");
+            },
+            RequestResult::ReadInputRegisters(request_result_data) => 
+            {
+                let frequency: u16 = request_result_data.result.get(InputRegister::CurrentFrequency as usize).unwrap_or(&0) / 10;
+                
+                let voltage: u16 = request_result_data.result.get(InputRegister::BusVoltage as usize).unwrap_or(&0) / 10;
+                
+                let current: u16 = request_result_data.result.get(InputRegister::LineCurrent as usize).unwrap_or(&0) / 100;
+                
+                let temperature: u16 = *request_result_data.result.get(InputRegister::DriveTemperature as usize).unwrap_or(&0);
+                
+                let operation_status: u16 = *request_result_data.result.get(InputRegister::SystemStatus as usize).unwrap_or(&0);
+                
+                
+                _ = operation_status;
+                
+                self.status = Some(Status {
+                    frequency:        units::Frequency::new::<hertz>(frequency as f64),
+                    voltage:          units::ElectricPotential::new::<volt>(voltage as f64),
+                    current:          units::ElectricCurrent::new::<ampere>(current as f64),
+                    temperature:      units::ThermodynamicTemperature::new::<degree_celsius>(temperature as f64),
+                    operation_status: OperationStatus::Idle,
+                });
+            },
+            RequestResult::PresetHoldingRegister(request_result_data) => 
+            {
+                tracing::error!("Received exception: ");
+            },
+            RequestResult::Exception(request_result_data) => 
+            {
+                tracing::error!("Received exception: ");
+            },
+        }   
     }
 }
 

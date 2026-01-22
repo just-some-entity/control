@@ -1,65 +1,87 @@
-use crate::serial::devices::us_3202510::{Register, modbus_rtu_ex};
+use crate::serial::devices::us_3202510::register::HoldingRegister;
+use crate::serial::devices::us_3202510::register::InputRegister;
+use crate::serial::interfaces::modbus_rtu;
+
+use modbus_rtu::RequestRegistryEntry;
+use modbus_rtu::InterfaceRequest;
+use modbus_rtu::RequestPayload;
+use modbus_rtu::request::ReadRegisters;
+use modbus_rtu::request::WriteRegister;
+
+use proc_macros::{self, EnumCount};
+
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq, EnumCount)]
+pub enum RequestType
+{
+    RefreshStatus,
+    SetFrequency,
+}
 
 #[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum Request
 {
-    WriteRunningFrequency(u16),
-    ReadInverterStatus,
-    StopMotor,
-    StartForwardRotation,
-    StartReverseRotation,
-    ReadRunningFrequency,
-    ReadMotorStatus,
-    ResetInverter,
-    WriteParameter,
-    
     RefreshStatus,
+    SetFrequency(u8),
 }
 
 impl Request
 {
-    pub fn to_interface_request(&self) -> modbus_rtu_ex::InterfaceRequest
+    pub fn tag(&self) -> RequestType
+    {
+        match self 
+        {
+            Request::RefreshStatus   => RequestType::RefreshStatus,
+            Request::SetFrequency(_) => RequestType::SetFrequency,
+        }
+    }
+    
+    pub fn to_interface_request(&self) -> InterfaceRequest
     {
         match self
         {
-            Request::RefreshStatus => 
+            Request::RefreshStatus =>
             {
-                let payload = modbus_rtu_ex::Payload::ReadInputRegister {
-                    slave_id: 1,
-                    start_address: Register::BusVoltage.address(),
-                    quantity: 6,
-                };
-
-                modbus_rtu_ex::InterfaceRequest {
-                    type_id:  0,
-                    priority: 0,
-                    payload,
-                    delay: None,
+                InterfaceRequest {
+                    type_id: self.tag() as usize,
+                    payload: RequestPayload::ReadInputRegisters(ReadRegisters {
+                        start_address: InputRegister::OFFSET,
+                        quantity:      InputRegister::COUNT as u16,
+                    }),
                 }
             },
-            Request::WriteRunningFrequency(frequency) => 
+            Request::SetFrequency(value) =>
             {
-                let payload = modbus_rtu_ex::Payload::PresetHoldingRegister {
-                    slave_id: 0,
-                    address: Register::SetFrequency.address(),
-                    value: *frequency,
-                };
-                
-                modbus_rtu_ex::InterfaceRequest {
-                    type_id:  0,
-                    priority: 999,
-                    payload,
-                    delay:    None,
+                InterfaceRequest {
+                    type_id: self.tag() as usize,
+                    payload: RequestPayload::PresetHoldingRegister(WriteRegister {
+                        address:  HoldingRegister::SetFrequency.address(),
+                        value:    *value as u16,
+                    }),
                 }
             },
-            Request::ReadInverterStatus => todo!(),
-            Request::StopMotor => todo!(),
-            Request::StartForwardRotation => todo!(),
-            Request::StartReverseRotation => todo!(),
-            Request::ReadRunningFrequency => todo!(),
-            Request::ReadMotorStatus => todo!(),
-            Request::ResetInverter => todo!(),
-            Request::WriteParameter => todo!(),
         }
     }
 }
+
+impl RequestType
+{
+    const fn registry_entry(&self) -> RequestRegistryEntry
+    {
+        match self
+        {
+            Self::RefreshStatus => RequestRegistryEntry { 
+                priority:    0,
+                extra_delay: 0,
+            },
+            Self::SetFrequency => RequestRegistryEntry { 
+                priority:    1,
+                extra_delay: 0,
+            },
+        }
+    }
+}
+
+pub(crate) const REGISTRY: [RequestRegistryEntry; RequestType::COUNT] = [
+    RequestType::RefreshStatus.registry_entry(),
+    RequestType::SetFrequency.registry_entry(),
+];
