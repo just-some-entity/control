@@ -143,6 +143,9 @@ export function pellet1MessageHandler(
             else if (eventName === "LiveValuesEvent") 
             {
                 const liveValuesEvent = liveValuesEventSchema.parse(event);
+
+                console.log(liveValuesEvent)
+
                 const frequencyValue: TimeSeriesValue = {
                   value: liveValuesEvent.data.inverter_values.frequency,
                   timestamp: event.ts,

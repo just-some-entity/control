@@ -21,4 +21,6 @@ pub use structs::RequestPayload;
 pub use structs::request;
 pub use structs::response;
 
+pub use interface::SendRequestError;
+
 const FRAME_SIZE_MAX: usize = 256;

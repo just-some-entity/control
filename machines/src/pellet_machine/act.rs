@@ -1,5 +1,7 @@
 use std::time::{Duration, Instant};
 
+use units::frequency::hertz;
+
 use crate::MachineAct;
 use crate::MachineMessage;
 use crate::MachineValues;
@@ -26,11 +28,12 @@ impl MachineAct for PelletMachine
 
             if let Some(value) = self.mutation_request.frequency 
             {
-                inverter.set_frequency_target(value);
+                inverter.set_frequency_target(units::Frequency::new::<hertz>(value as f64));
+                self.mutation_request.frequency = None;
             }
 
             if should_emit {
-                inverter.refresh_status();
+                // inverter.refresh_status();
             }
 
             inverter.update();

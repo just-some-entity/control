@@ -5,7 +5,7 @@ use core::mem::MaybeUninit;
 
 use anyhow::{anyhow};
 
-use smol::channel::{Sender, unbounded};
+use smol::channel::{SendError, Sender, unbounded};
 use smol::channel::Receiver;
 
 use crate::serial::interfaces::modbus_rtu::frame::FrameParseError;
@@ -72,6 +72,13 @@ pub enum InterfaceIOError
     Read(std::io::Error),
 }
 
+pub enum SendRequestError
+{
+    PendingRequest,
+    QueueEmpty,
+    IO(SendError<Frame>),
+}
+
 // ======================== functions ========================
 
 impl Metadata
@@ -106,12 +113,18 @@ impl<const N: usize> Interface<N>
     {
         assert!(request.type_id < N);
 
+        tracing::error!("storing: {:?} | {}", &request.payload, request.type_id);
+
         self.payloads_buf[request.type_id].write(request.payload);
+
         
         if !self.metadata_buf[request.type_id].enabled 
         { 
             self.metadata_buf[request.type_id] = Metadata::new(); 
         };
+
+                tracing::error!("metadata: {:?}", &self.metadata_buf);
+
     }
     
     fn find_next_request_id(&self) -> Option<usize>
@@ -121,7 +134,11 @@ impl<const N: usize> Interface<N>
         
         for metadata in &self.metadata_buf 
         {
-            if !metadata.enabled { continue; }
+            if !metadata.enabled 
+            { 
+                i += 1;
+                continue; 
+            }
 
             if let Some(idx) = result
             {
@@ -148,31 +165,44 @@ impl<const N: usize> Interface<N>
         result
     }
     
-    pub fn send_next_request(&mut self) -> Result<(), anyhow::Error>
+    pub fn send_next_request(&mut self) -> Result<(), SendRequestError>
     {
-        
-        
         if self.queued_id.is_some() 
         {
-            return Err(anyhow!("Can't send request, open request"));
+            return Err(SendRequestError::PendingRequest);
         }
-        
+
         let request_index = match self.find_next_request_id() 
         {
             Some(idx) => { idx }
-            None => { return Err(anyhow!("Nothing in queue")) }
+            None => { return Err(SendRequestError::QueueEmpty) }
         };
+
+        for metadata in &mut self.metadata_buf 
+        {
+            metadata.enabled = false;
+        }
 
         let payload = unsafe
         {
             self.payloads_buf[request_index].assume_init_ref()
         };
         
+        tracing::error!("retrieving: {:?} | {}", &payload, request_index);
+
+
         let frame = Frame::from_request(self.config.slave_id, payload);
-        
-        smol::block_on(self.req_tx.send(frame)).map_err(|_| anyhow!("Failed to send!"))?;
+
+        tracing::warn!("SENDING: {:?}", frame.bytes());
+
 
         self.metadata_buf[request_index].enabled = false;
+
+        if let Err(e) = smol::block_on(self.req_tx.send(frame))
+        {
+            return Err(SendRequestError::IO(e));
+        }
+
         for metadata in &mut self.metadata_buf 
         {
             metadata.ignored_times += 1;
@@ -210,7 +240,20 @@ impl<const N: usize> Interface<N>
             
             self.queued_id = None;
             
-            match recv_data?
+            let data = match recv_data 
+            {
+                Ok(data) => 
+                {
+                    data
+                },
+                Err(e) => 
+                {
+                    self.queued_id = None;
+                    return Err(e);
+                },  
+            };
+
+            match data
             {
                 Some(frame) => 
                 {

@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 // external deps
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +14,7 @@ mod serial_device;
 
 type ModbusInterface = crate::serial::interfaces::modbus_rtu::Interface<2>;
 
-use crate::serial::{devices::us_3202510::register::InputRegister, interfaces::modbus_rtu::RequestResult};
+use crate::serial::{devices::us_3202510::register::InputRegister, interfaces::modbus_rtu::{RequestResult, SendRequestError}};
 
 #[derive(Debug)]
 pub struct US3202510
@@ -83,7 +84,7 @@ impl US3202510
         }
         
         //TODO: anyhow crashes system for reason?
-        self.refresh_status();
+        // self.refresh_status();
 
         if self.interface.is_ready_to_send()
         {
@@ -92,7 +93,15 @@ impl US3202510
                 Ok(_) => {  },
                 Err(e) => 
                 { 
-                    tracing::error!("Error sending request: {:?}", e); 
+                    match e
+                    {
+                        SendRequestError::PendingRequest => {},
+                        SendRequestError::QueueEmpty => {},
+                        SendRequestError::IO(err) => 
+                        {
+                            tracing::error!("Error sending request: {}", err);
+                        },
+                    }
                 },
             }
         }
@@ -110,6 +119,9 @@ impl US3202510
 
     pub fn set_frequency_target(&mut self, frequency: units::Frequency)
     {
+
+        tracing::error!("Set frequency");
+
         self.config.frequency = frequency;
         let as_hertz_u8 = frequency.get::<hertz>().round().clamp(0.0, 99.0) as u8;
         self.queue_request(Request::SetFrequency(as_hertz_u8));
@@ -147,7 +159,7 @@ impl US3202510
         {
             RequestResult::ReadHoldingRegisters(request_result_data) => 
             {
-                tracing::error!("Received exception: ");
+                tracing::error!("ReadHoldingRegisters: WORKED");
             },
             RequestResult::ReadInputRegisters(request_result_data) => 
             {
@@ -157,7 +169,7 @@ impl US3202510
                 
                 let current: u16 = request_result_data.result.get(InputRegister::LineCurrent as usize).unwrap_or(&0) / 100;
                 
-                let temperature: u16 = *request_result_data.result.get(InputRegister::DriveTemperature as usize).unwrap_or(&0);
+                let temperature: u16 = *request_result_data.result.get(InputRegister::DriveTemperature as usize).unwrap_or(&0) / 10000;
                 
                 let operation_status: u16 = *request_result_data.result.get(InputRegister::SystemStatus as usize).unwrap_or(&0);
                 
@@ -165,20 +177,20 @@ impl US3202510
                 _ = operation_status;
                 
                 self.status = Some(Status {
-                    frequency:        units::Frequency::new::<hertz>(frequency as f64),
-                    voltage:          units::ElectricPotential::new::<volt>(voltage as f64),
-                    current:          units::ElectricCurrent::new::<ampere>(current as f64),
-                    temperature:      units::ThermodynamicTemperature::new::<degree_celsius>(temperature as f64),
+                    frequency:        units::Frequency::new::<hertz>(0 as f64),
+                    voltage:          units::ElectricPotential::new::<volt>(0 as f64),
+                    current:          units::ElectricCurrent::new::<ampere>(0 as f64),
+                    temperature:      units::ThermodynamicTemperature::new::<degree_celsius>(0 as f64),
                     operation_status: OperationStatus::Idle,
                 });
             },
             RequestResult::PresetHoldingRegister(request_result_data) => 
             {
-                tracing::error!("Received exception: ");
+                tracing::error!("PresetHoldingRegister: WORKED");
             },
             RequestResult::Exception(request_result_data) => 
             {
-                tracing::error!("Received exception: ");
+                tracing::error!("Received exception: {:?}", request_result_data.result);
             },
         }   
     }

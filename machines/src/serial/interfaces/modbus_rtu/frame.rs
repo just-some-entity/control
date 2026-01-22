@@ -88,10 +88,12 @@ impl Frame
             },
             RequestPayload::PresetHoldingRegister(payload) => 
             {
-                let bytes = payload.value.to_be_bytes();
+                let bytes = payload.to_be_bytes();
                 result.buf[result.len]     = bytes[0];
                 result.buf[result.len + 1] = bytes[1];
-                result.len += 2;
+                result.buf[result.len + 2] = bytes[2];
+                result.buf[result.len + 3] = bytes[3];
+                result.len += 4;
             },
         }
         

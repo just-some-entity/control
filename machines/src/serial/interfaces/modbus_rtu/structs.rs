@@ -40,7 +40,7 @@ pub mod request
         pub fn to_be_bytes(&self) -> [u8; 4]
         {
             let mut result: [u8; 4] = [0; 4];
-            
+
             let address_bytes = self.address.to_be_bytes();
             result[0] = address_bytes[0];
             result[1] = address_bytes[1];
@@ -48,6 +48,8 @@ pub mod request
             let value_bytes = self.value.to_be_bytes();
             result[2] = value_bytes[0];
             result[3] = value_bytes[1];
+
+            tracing::warn!("Sending: {}: {}", self.address, self.value);
             
             result
         }

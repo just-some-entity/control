@@ -46,6 +46,7 @@ impl MachineNewTrait for PelletMachine
             inverter,
 
             mutation_request: MutationRequests {
+                run_mode: None,
                 frequency: None,
                 accleration_level: None,
                 decleration_level: None,

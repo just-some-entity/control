@@ -75,7 +75,7 @@ pub struct PelletMachineNamespace {
 enum Mutation 
 {
     SetRunState(u8),
-    SetFrequency(u8),
+    SetFrequencyTarget(u8),
     SetAccelerationLevel(u8),
     SetDecelerationLevel(u8),
 }
@@ -88,14 +88,14 @@ impl MachineApi for PelletMachine {
     fn api_mutate(&mut self, request_body: Value) -> Result<(), anyhow::Error> 
     {
         let mutation: Mutation = serde_json::from_value(request_body)?;
+
         match mutation 
         {
             Mutation::SetRunState(state) => 
             {
-                
                 // self.set_run_state(state);
             }
-            Mutation::SetFrequency(frequency) => 
+            Mutation::SetFrequencyTarget(frequency) => 
             {
                 self.set_frequency(frequency);
             }

@@ -49,7 +49,8 @@ pub struct PelletMachine
 #[derive(Debug)]
 pub struct MutationRequests
 {
-    frequency: Option<units::Frequency>,
+    run_mode:          Option<u8>,
+    frequency:         Option<u8>,
     accleration_level: Option<u8>,
     decleration_level: Option<u8>,
 }
@@ -107,22 +108,27 @@ impl PelletMachine
 
     pub fn set_frequency(&mut self, frequency: u8)
     {
-        self.emit_state();
+        self.mutation_request.frequency = Some(frequency.clamp(0, 99));
     }
     
+    pub fn set_direction(&mut self, forward: bool)
+    {
+        //self.mutation_request.run_mode = Some(frequency.clamp(0, 99));
+    }
+
     pub fn set_run_mode(&mut self, run_mode: u8)
     {
-        self.emit_state();
+        //self.mutation_request.frequency = Some(frequency.clamp(0, 99));
     }
     
     pub fn set_acceleration_level(&mut self, acceleration_level: u8)
     {
-        self.emit_state();
+        //self.mutation_request.accleration_level = Some(frequency.clamp(0, 99));
     }
     
     pub fn set_deceleration_level(&mut self, deceleration_level: u8)
     {
-        self.emit_state();
+        //self.mutation_request.decleration_level = Some(frequency.clamp(0, 99));
     }
     
     pub fn update(&mut self)
